@@ -40,7 +40,7 @@ ESP8266 firmware and built-in features can be updated with some tools provided b
 	
 ## Testing ESP8266 via Arduino Uno
 - To program ESP8266 as standalone, Arduino Uno must be bypassed. This is done by connecting the "RESET" PIN of Arduino to the GND.
-Now ESP8266 can be programmed through Arduino hardware. All of the connections are remaining as the same.
+Now ESP8266 can be programmed through Arduino hardware. All of the connections are remaining as the same (GPIO-0=LOW is programming mode and GPIO-0=HIGH is running mode)
 - Open Arduino IDE and **File --> Examples --> ESP8266WiFi --> WiFiScan**.
 -  Make sure board configuration is correct as written in **Setting up Arduino IDE** section.
 - Then compile and upload the code.
