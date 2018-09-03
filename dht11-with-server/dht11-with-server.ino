@@ -32,7 +32,7 @@ const long interval = 2000; // interval at which to read sensor
 
 void handle_root() {
   server.send(200, "text/plain", "Hello from the weather esp8266, read from /temp or /humidity");
-  delay(100);
+  
 }
 void setup(void)
 {
@@ -74,6 +74,7 @@ void setup(void)
 void loop(void)
 {
   server.handleClient();
+  delay(1000);
 }
 
 void gettemperature() {
@@ -96,6 +97,6 @@ void gettemperature() {
     return;
   }
 
-  delay(500);
+  delay(1000);
 }
 
