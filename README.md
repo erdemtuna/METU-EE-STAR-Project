@@ -1,6 +1,6 @@
-# starProject
-Steps to develop this project is summarized in the following sections.
-
+# METU EEE STAR, 2018
+Steps to develop "IOT Distributed Temperature Measurement and Control" project is summarized in the following sections.
+Program link can be accessed  [here](http://star.eee.metu.edu.tr/).
 
 ## Required Hardwares
 - ESP8266 (01), wireless module
