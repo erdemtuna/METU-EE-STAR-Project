@@ -1,93 +1,118 @@
-/* DHTServer - ESP8266 Webserver with a DHT sensor as an input
-  Based on ESP8266Webserver, DHTexample, and BlinkWithoutDelay (thank you)
-  Version 1.0 5/3/2014 Version 1.0 Mike Barela for Adafruit Industries
-*/
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <PubSubClient.h>
+/*
+ Basic ESP8266 MQTT example
 
+ This sketch demonstrates the capabilities of the pubsub library in combination
+ with the ESP8266 board/library.
+
+ It connects to an MQTT server then:
+  - publishes "hello world" to the topic "outTopic" every two seconds
+  - subscribes to the topic "inTopic", printing out any messages
+    it receives. NB - it assumes the received payloads are strings not binary
+  - If the first character of the topic "inTopic" is an 1, switch ON the ESP Led,
+    else switch it off
+
+ To install the ESP8266 board, (using Arduino 1.6.4+):
+  - Add the following 3rd party board manager under "File -> Preferences -> Additional Boards Manager URLs":
+       http://arduino.esp8266.com/stable/package_esp8266com_index.json
+  - Open the "Tools -> Board -> Board Manager" and click install for the ESP8266"
+  - Select your ESP8266 in "Tools -> Board"
+
+  Adatped by Erdem Tuna for this code to work with DHT11.
+
+*/
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
 #include <dht.h>
 dht DHT;
-#define DHT11_PIN 2
+#define DHT11_PIN 2 // GPIO 2 of ESP8266
 
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
- 
-const char* ssid = "SUPERONLINE_WiFi_5555";
-const char* password =  "ab6dda65";
-const char* mqttServer = "35.237.42.75";
-const int mqttPort = 1883;
-const char* mqttUser = "";
-const char* mqttPassword = "";
-char payload[50] ;
+float hum, temp_c; // variables to store humidity and temperature
+float last_temp_c = -45; // last sent 
+
+const char* ssid = "SUPERONLINE_WiFi_5555"; // wifi ssid
+const char* password = "ab6dda65"; // wifi password
+
+const char* mqtt_server = "35.231.154.149"; // mqtt server
+const int mqtt_port = 1883; // mqtt port
+
+char payload[50]; // mqtt payload
+uint16_t delay_duration = 2000; // loop function delay
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-float hum, temp_c; // Values read from sensor
- 
+
 void setup() {
- 
+  pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
   Serial.begin(115200);
- 
+  setup_wifi();
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
+}
+
+void setup_wifi() {
+
+  delay(10);
+  // We start by connecting to a WiFi network
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
   WiFi.begin(ssid, password);
- 
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.println("Connecting to WiFi..");
+    Serial.print(".");
   }
-  Serial.println("Connected to the WiFi network");
- 
-  client.setServer(mqttServer, mqttPort);
-  client.setCallback(callback);
- 
-  while (!client.connected()) {
-    Serial.println("Connecting to MQTT...");
- 
-    if (client.connect("ESP8266Client", mqttUser, mqttPassword )) {
- 
-      Serial.println("connected");  
- 
-    } else {
- 
-      Serial.print("failed with state ");
-      Serial.print(client.state());
-      delay(2000);
- 
-    }
-  }
-   
-  client.subscribe("esp/#");
- 
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 }
- 
+
 void callback(char* topic, byte* payload, unsigned int length) {
- 
-  Serial.print("Message arrived in topic: ");
-  Serial.println(topic);
- 
-  Serial.print("Message:");
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
   }
- 
   Serial.println();
-  Serial.println("-----------------------");
- 
-}
- 
-void loop() {
-  client.loop();
-  gettemperature();
-  
-  String tempor = "temp: " + String(temp_c) + " hum: " + String(hum);
-  snprintf (payload, 50,tempor.c_str());
-  client.publish("esp/test", payload);
 
-  delay(2000);
+  // Switch on the LED if an 1 was received as first character
+  if ((char)payload[0] == '1') {
+    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    // but actually the LED is on; this is because
+    // it is acive low on the ESP-01)
+  } else {
+    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
+  }
+
 }
 
-void gettemperature() {
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("ESP8266Client")) {
+      Serial.println("connected");
+      //client.publish("outTopic", "hello world");
+      client.subscribe("inTopic/#"); // subscribe
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+
+void get_temperature() {
   // Reading temperature for humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
   DHT.read11(DHT11_PIN);
@@ -106,7 +131,28 @@ void gettemperature() {
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
-
-  delay(1000);
 }
 
+String get_payload(){
+  get_temperature();
+  String pre;
+  pre= "temp: " + String(temp_c) + " hum: " + String(hum);
+  return pre;
+  }
+
+void loop() {
+
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  //payload = get_payload();
+  snprintf (payload, 75, get_payload().c_str());
+  if(abs(temp_c-last_temp_c) > last_temp_c/70){
+    Serial.print("Publish message: ");
+    Serial.println(payload);
+    client.publish("esp/test", payload);
+    last_temp_c = temp_c;
+    }
+  delay(delay_duration);
+}
