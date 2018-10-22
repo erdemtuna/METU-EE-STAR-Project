@@ -45,7 +45,7 @@ void loop()
 		break;
   }
   // DISPLAY DATA
-  hum = round(DHT.humidity*10)/10;
+  hum = round(DHT.humidity*10)/10.0;
   temp_c = round(DHT.temperature*10)/10.0;
   Serial.print(hum);
   Serial.print(",\t");
