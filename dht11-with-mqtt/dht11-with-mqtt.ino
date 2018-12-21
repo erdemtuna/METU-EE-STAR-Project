@@ -30,10 +30,10 @@ dht DHT;
 float hum, temp_c; // variables to store humidity and temperature
 float last_temp_c = -45; // last sent 
 
-const char* ssid = "SUPERONLINE_WiFi_5555"; // wifi ssid
-const char* password = "ab6dda65"; // wifi password
+const char* ssid = "DESKTOP-NET"; // wifi ssid
+const char* password = "pass1234"; // wifi password
 
-const char* mqtt_server = "35.231.154.149"; // mqtt server
+const char* mqtt_server = "broker.hivemq.com"; // mqtt server
 const int mqtt_port = 1883; // mqtt port
 
 char payload[50]; // mqtt payload
@@ -151,7 +151,7 @@ void loop() {
   if(abs(temp_c-last_temp_c) > last_temp_c/70){
     Serial.print("Publish message: ");
     Serial.println(payload);
-    client.publish("esp/test", payload);
+    client.publish("fLab/sensor2", payload);
     last_temp_c = temp_c;
     }
   delay(delay_duration);

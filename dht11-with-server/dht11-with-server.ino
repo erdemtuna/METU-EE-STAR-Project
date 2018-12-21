@@ -11,8 +11,8 @@ dht DHT;
 
 #define DHT11_PIN 2
 
-const char* ssid = "SUPERONLINE_WiFi_5555";
-const char* password = "ab6dda65";
+const char* ssid = "DESKTOP-NET";
+const char* password = "pass1234";
 ESP8266WebServer server(80);
 // Initialize DHT sensor
 // NOTE: For working with a faster than ATmega328p 16 MHz Arduino chip, like an ESP8266,
