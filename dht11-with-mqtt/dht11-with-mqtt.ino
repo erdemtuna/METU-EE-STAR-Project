@@ -23,10 +23,14 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <dht.h>
-dht DHT;
-#define DHT11_PIN 2 // GPIO 2 of ESP8266
+#include "DHT.h"
 
+#define DHTPIN 2 // GPIO 2 of ESP8266
+
+#define DHTTYPE DHT11   // DHT 11
+//#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+//#define DHTTYPE DHT21   // DHT 21 (AM2301)
+DHT dht(DHTPIN, DHTTYPE);
 float hum, temp_c; // variables to store humidity and temperature
 float last_temp_c = -45; // last sent 
 
@@ -115,12 +119,15 @@ void reconnect() {
 void get_temperature() {
   // Reading temperature for humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
-  DHT.read11(DHT11_PIN);
-  hum = round(DHT.humidity * 10) / 10; // measure humidity
-  temp_c = round(DHT.temperature * 10) / 10.0; // measure temperature
+  //DHT.read11(DHT11_PIN);
+  //hum = round(DHT.humidity * 10) / 10; // measure humidity
+  //temp_c = round(DHT.temperature * 10) / 10.0; // measure temperature
+  temp_c = dht.readTemperature();
 
   // print the temperature and humidity on serial monitor
-  Serial.print("temperature: ");
+  //Serial.print("temperature: ");
+  //Serial.print(temp_c);
+  Serial.print(F("%  Temperature: "));
   Serial.print(temp_c);
   Serial.print(",\t");
   Serial.print("humidity: ");
@@ -146,13 +153,15 @@ void loop() {
     reconnect();
   }
   client.loop();
-  //payload = get_payload();
+//  payload = get_payload();
   snprintf (payload, 75, get_payload().c_str());
-  if(abs(temp_c-last_temp_c) > last_temp_c/70){
+  
+ // if(abs(temp_c-last_temp_c) > 0.5){
     Serial.print("Publish message: ");
     Serial.println(payload);
     client.publish("fLab/sensor2", payload);
     last_temp_c = temp_c;
-    }
+    //}
+    get_temperature();
   delay(delay_duration);
 }
